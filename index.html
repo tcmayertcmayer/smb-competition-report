@@ -246,6 +246,9 @@
       background: rgba(15,23,42,0.9);
       color: var(--text-muted);
       border: 1px solid rgba(148, 163, 255, 0.45);
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
     }
 
     .timeline-pill.hot {
@@ -256,6 +259,7 @@
       box-shadow:
         0 0 0 1px rgba(34, 197, 94, 0.15),
         0 12px 28px rgba(15, 118, 110, 0.45);
+      transform: translateY(-1px);
     }
 
     .hero-metric-grid {
@@ -699,7 +703,7 @@
             <span class="em">销售决策看这一页就够</span>
           </h1>
           <p class="hero-subtitle">
-            汇总 SMB 组 8、9、11 月竞对动态，聚焦签约趋势、价格与活动、生态合作和 AI 话术，
+            汇总 SMB 组 8、9、10、11 月竞对动态，聚焦签约趋势、价格与活动、生态合作和 AI 话术，
             帮助 SMB 销售在实战中更好地“读懂对手、说服客户、打赢关键单”。
           </p>
           <div class="hero-meta-row">
@@ -727,27 +731,27 @@
             <div class="hero-timeline">
               <span class="timeline-label">月份</span>
               <div class="timeline-track">
-                <div class="timeline-pill">8 月</div>
-                <div class="timeline-pill">9 月</div>
-                <div class="timeline-pill hot">10 月</div>
-                <div class="timeline-pill">11 月</div>
+                <div class="timeline-pill" data-month="8">8 月</div>
+                <div class="timeline-pill" data-month="9">9 月</div>
+                <div class="timeline-pill hot" data-month="10">10 月</div>
+                <div class="timeline-pill" data-month="11">11 月</div>
               </div>
             </div>
             <div class="hero-metric-grid">
               <div class="metric-chip">
                 <div class="metric-label">签约 &amp; 案例重点</div>
-                <div class="metric-value">行业标杆组合输出</div>
-                <div class="metric-badge">客户问“同行都在用谁”</div>
+                <div class="metric-value" id="metric-sign-value">行业标杆组合输出</div>
+                <div class="metric-badge" id="metric-sign-badge">客户问“同行都在用谁”</div>
               </div>
               <div class="metric-chip">
                 <div class="metric-label">价格与活动打法</div>
-                <div class="metric-value">方案 + 节点 + 政策</div>
-                <div class="metric-badge">不只比谁更便宜</div>
+                <div class="metric-value" id="metric-price-value">方案 + 节点 + 政策</div>
+                <div class="metric-badge" id="metric-price-badge">不只比谁更便宜</div>
               </div>
               <div class="metric-chip">
                 <div class="metric-label">AI 叙事强度</div>
-                <div class="metric-value">管理升级主线</div>
-                <div class="metric-badge">问结果而非功能</div>
+                <div class="metric-value" id="metric-ai-value">管理升级主线</div>
+                <div class="metric-badge" id="metric-ai-badge">问结果而非功能</div>
               </div>
             </div>
           </div>
@@ -1133,11 +1137,78 @@
   </div>
 
   <script>
-    // 轻量交互：点击某些标签时高亮对应区块（预留交互钩子，可按需扩展）
+    // 轻量交互：点击月份，高亮对应月份并切换上方 3 个指标文案
     (function () {
-      const root = document.documentElement;
-      // 预留，当前页面主要依靠视觉层级即可完成 3 秒阅读动线
-      // 如需后续扩展筛选或折叠功能，可在此处挂载事件
+      const monthConfig = {
+        "8": {
+          signValue: "行业标杆组合输出",
+          signBadge: "客户问“同行都在用谁”",
+          priceValue: "日常节奏促销为主",
+          priceBadge: "活动是背景配角",
+          aiValue: "AI 管理叙事起量",
+          aiBadge: "从功能开始走向场景"
+        },
+        "9": {
+          signValue: "多行业连续签约与案例",
+          signBadge: "行业标杆组合越来越完整",
+          priceValue: "活动后限时套餐",
+          priceBadge: "大会 / 训练营带动成交",
+          aiValue: "AI+管理声量抬升",
+          aiBadge: "AI 被打包进增长故事"
+        },
+        "10": {
+          signValue: "标杆客户+项目集中披露",
+          signBadge: "场景战役式讲故事",
+          priceValue: "方案 + 节点 + 政策",
+          priceBadge: "不只比谁更便宜",
+          aiValue: "管理升级主线",
+          aiBadge: "问结果而非功能"
+        },
+        "11": {
+          signValue: "政企 / 教育等长期合作升级",
+          signBadge: "品牌与生态背书增强",
+          priceValue: "捆绑行业解决方案",
+          priceBadge: "价格融入整体价值",
+          aiValue: "AI 深度嵌入生态合作",
+          aiBadge: "从单点能力到长期能力"
+        }
+      };
+
+      const pills = document.querySelectorAll(".timeline-pill[data-month]");
+      const signValueEl = document.getElementById("metric-sign-value");
+      const signBadgeEl = document.getElementById("metric-sign-badge");
+      const priceValueEl = document.getElementById("metric-price-value");
+      const priceBadgeEl = document.getElementById("metric-price-badge");
+      const aiValueEl = document.getElementById("metric-ai-value");
+      const aiBadgeEl = document.getElementById("metric-ai-badge");
+
+      function applyMonth(month) {
+        const cfg = monthConfig[month];
+        if (!cfg) return;
+
+        pills.forEach(p => {
+          if (p.dataset.month === month) {
+            p.classList.add("hot");
+          } else {
+            p.classList.remove("hot");
+          }
+        });
+
+        if (signValueEl) signValueEl.textContent = cfg.signValue;
+        if (signBadgeEl) signBadgeEl.textContent = cfg.signBadge;
+        if (priceValueEl) priceValueEl.textContent = cfg.priceValue;
+        if (priceBadgeEl) priceBadgeEl.textContent = cfg.priceBadge;
+        if (aiValueEl) aiValueEl.textContent = cfg.aiValue;
+        if (aiBadgeEl) aiBadgeEl.textContent = cfg.aiBadge;
+      }
+
+      pills.forEach(pill => {
+        pill.addEventListener("click", () => {
+          const m = pill.dataset.month;
+          if (!m) return;
+          applyMonth(m);
+        });
+      });
     })();
   </script>
 </body>
